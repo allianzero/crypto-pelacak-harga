@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pelacak Harga Crypto — Live IDR</title>
+<style>
+body{font-family:system-ui,Arial,sans-serif;background:#0f1115;color:#f2f2f2;margin:0;padding:20px}
+h1{font-size:22px;margin:0 0 4px}
+p{color:#9aa0a6;margin:0 0 16px}
+table{width:100%;border-collapse:collapse}
+th,td{padding:10px 8px;border-bottom:1px solid #222;text-align:right}
+th:first-child,td:first-child{text-align:left}
+.up{color:#22c55e}.down{color:#ef4444}
+button{background:#f0b90b;border:0;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer}
+</style>
+</head>
+<body>
+<h1>Pelacak Harga Crypto</h1>
+<p id="status">Memuat harga live…</p>
+<table>
+<thead><tr><th>Koin</th><th>Harga (Rp)</th><th>24 jam</th></tr></thead>
+<tbody id="rows"></tbody>
+</table>
+<p><button id="refresh">Refresh sekarang</button></p>
+<script>
+const COINS=[["bitcoin","BTC"],["ethereum","ETH"],["binancecoin","BNB"],["solana","SOL"],["ripple","XRP"],["dogecoin","DOGE"],["cardano","ADA"],["tron","TRX"]];
+const fmt=n=>"Rp"+Math.round(n).toLocaleString("id-ID");
+async function load(){
+  const st=document.getElementById("status");
+  try{
+    const ids=COINS.map(c=>c[0]).join(",");
+    const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids="+ids+"&vs_currencies=idr&include_24hr_change=true");
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    const d=await r.json();
+    document.getElementById("rows").innerHTML=COINS.map(([id,sym])=>{
+      const p=d[id]; if(!p) return "";
+      const ch=p.idr_24h_change||0;
+      return "<tr><td>"+sym+"</td><td>"+fmt(p.idr)+"</td><td class='"+(ch>=0?"up":"down")+"'>"+(ch>=0?"+":"")+ch.toFixed(2)+"%</td></tr>";
+    }).join("");
+    st.textContent="Harga live dari CoinGecko — terakhir update "+new Date().toLocaleTimeString("id-ID");
+  }catch(e){
+    st.textContent="Tidak bisa memuat harga live (offline / CoinGecko tidak terjangkau). Coba refresh lagi.";
+  }
+}
+document.getElementById("refresh").onclick=load;
+load(); setInterval(load,30000);
+</script>
+</body>
+</html>
